@@ -28,7 +28,6 @@ public class MqttConfig {
     @Value("${mqtt.topic.sensores}")
     private String topicSensores;
 
-    // 1. Configura la conexión al Broker
     @Bean
     public MqttPahoClientFactory mqttClientFactory() {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();

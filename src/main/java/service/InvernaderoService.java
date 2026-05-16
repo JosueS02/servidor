@@ -17,22 +17,18 @@ public class InvernaderoService {
     @Autowired
     private InvernaderoRepository invernaderoRepository;
 
-    // Obtener todos los invernaderos
     public List<Invernadero> obtenerTodos() {
         return invernaderoRepository.findAll();
     }
 
-    // Buscar un invernadero por su ID
     public Optional<Invernadero> obtenerPorId(Integer id) {
         return invernaderoRepository.findById(id);
     }
 
-    // Crear o actualizar un invernadero
     public Invernadero guardar(Invernadero invernadero) {
         return invernaderoRepository.save(invernadero);
     }
 
-    // Eliminar un invernadero
     public void eliminar(Integer id) {
         invernaderoRepository.deleteById(id);
     }
