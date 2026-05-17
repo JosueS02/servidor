@@ -167,6 +167,52 @@ public class InvernaderoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new InvernaderoDTO(nuevoInvernadero));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody Map<String, Object> payload) {
+        Optional<Invernadero> existente = invernaderoService.obtenerPorId(id);
+        if (existente.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Invernadero invernadero = existente.get();
+
+        Object idUsuarioObj = payload.get("idUsuario");
+        if (idUsuarioObj == null && payload.containsKey("usuario")) {
+            Map<?, ?> usrMap = (Map<?, ?>) payload.get("usuario");
+            idUsuarioObj = usrMap.get("idUsuario");
+        }
+
+        if (idUsuarioObj != null) {
+            Integer idUsuario = Integer.parseInt(idUsuarioObj.toString());
+            Usuario usuarioExistente = usuarioService.obtenerPorId(idUsuario).orElse(null);
+            if (usuarioExistente == null) {
+                return ResponseEntity.badRequest().body("El usuario indicado no existe. Verifica la sesión iniciada.");
+            }
+            invernadero.setUsuario(usuarioExistente);
+        }
+
+        if (payload.get("nombre") != null) {
+            String nombre = payload.get("nombre").toString();
+            if (!nombre.trim().isEmpty()) {
+                invernadero.setNombre(nombre);
+            }
+        }
+
+        if (payload.get("ubicacion") != null) {
+            String ubicacion = payload.get("ubicacion").toString();
+            if (!ubicacion.trim().isEmpty()) {
+                invernadero.setUbicacion(ubicacion);
+            }
+        }
+
+        if (payload.get("estado") != null) {
+            invernadero.setEstado(payload.get("estado").toString());
+        }
+
+        Invernadero actualizado = invernaderoService.guardar(invernadero);
+        return ResponseEntity.ok(new InvernaderoDTO(actualizado));
+    }
+
     @PostMapping("/{id}/sensores")
     public ResponseEntity<?> agregarSensores(@PathVariable Integer id, @RequestBody Map<String, List<String>> body) {
         List<String> sensores = body.get("sensores");

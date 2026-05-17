@@ -37,8 +37,8 @@ public class Plantacion {
     @Column(name = "fecha_finalizacion")
     private LocalDate fechaFinalizacion;
 
-    @Column(length = 20)
-    private String estado = "Activo";
+    @Column(name = "estado", nullable = false, length = 20)
+    private String estado = "ACTIVA";
 
     public Integer getIdPlantacion() {
         return idPlantacion;
