@@ -1,20 +1,14 @@
 package controller;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import model.Cultivo;
 import model.Usuario;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import service.CultivoService;
 import service.UsuarioService;
 
@@ -23,7 +17,6 @@ import service.UsuarioService;
  * @author josue
  */
 @RestController
-@RequestMapping("/api/cultivos")
 @CrossOrigin(origins = "*")
 public class CultivoController {
 
@@ -32,51 +25,113 @@ public class CultivoController {
     @Autowired
     private UsuarioService usuarioService;
 
-    // Obtener lista de todos los cultivos configurados
-    @GetMapping
-    public List<Cultivo> listar() {
-        return cultivoService.obtenerTodos();
+    // Clase interna DTO para asegurar compatibilidad total de nombres de variables con el Frontend
+    public static class CultivoDTO {
+        public String id; // Algunos componentes del front buscan 'id'
+        public String idCultivo; // Otros buscan 'idCultivo'
+        public String idUsuario;
+        public UsuarioDTO usuario;
+        public String nombre;
+        public Float temperaturaMin;
+        public Float temperaturaMax;
+        public Float humedadMin;
+        public Float humedadMax;
+        public Float luzMin;
+        public Float luzMax;
+
+        public CultivoDTO(Cultivo c) {
+            this.id = String.valueOf(c.getIdCultivo());
+            this.idCultivo = String.valueOf(c.getIdCultivo());
+            this.idUsuario = c.getUsuario() != null ? String.valueOf(c.getUsuario().getIdUsuario()) : null;
+            this.usuario = c.getUsuario() != null ? new UsuarioDTO(c.getUsuario()) : null;
+            this.nombre = c.getNombre();
+            this.temperaturaMin = c.getTemperaturaMin();
+            this.temperaturaMax = c.getTemperaturaMax();
+            this.humedadMin = c.getHumedadMin();
+            this.humedadMax = c.getHumedadMax();
+            this.luzMin = c.getLuzMin();
+            this.luzMax = c.getLuzMax();
+        }
     }
 
-    // Obtener detalle de un cultivo específico
-    @GetMapping("/{id}")
-    public ResponseEntity<Cultivo> buscarPorId(@PathVariable Integer id) {
+    public static class UsuarioDTO {
+        public String idUsuario;
+        public String correo;
+
+        public UsuarioDTO(Usuario usuario) {
+            this.idUsuario = usuario != null ? String.valueOf(usuario.getIdUsuario()) : null;
+            this.correo = usuario != null ? usuario.getCorreo() : null;
+        }
+    }
+
+    // GET: Soporta tanto la administración común como el selector de la simulación
+    @GetMapping({"/api/cultivos", "/api/crops", "/api/simulation/crops"})
+    public ResponseEntity<List<CultivoDTO>> listar(@RequestParam(value = "userId", required = false) Integer userId) {
+        List<CultivoDTO> dtos = cultivoService.obtenerTodos().stream()
+                .filter(c -> userId == null || (c.getUsuario() != null && userId.equals(c.getUsuario().getIdUsuario())))
+                .map(CultivoDTO::new)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
+    }
+
+    // GET: Obtener detalle por ID
+    @GetMapping({"/api/cultivos/{id}", "/api/crops/{id}"})
+    public ResponseEntity<CultivoDTO> buscarPorId(@PathVariable Integer id) {
         return cultivoService.obtenerPorId(id)
-                .map(ResponseEntity::ok)
+                .map(c -> ResponseEntity.ok(new CultivoDTO(c)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Registrar un nuevo tipo de cultivo (ej. Tomate, Lechuga)
-    @PostMapping
-    public ResponseEntity<?> crear(@RequestBody Cultivo cultivo) {
-        Usuario usuarioRequest = cultivo.getUsuario();
-        if (usuarioRequest == null || usuarioRequest.getIdUsuario() == null) {
+    // POST: Registrar un nuevo tipo de cultivo
+    @PostMapping({"/api/cultivos", "/api/crops"})
+    public ResponseEntity<?> crear(@RequestBody Map<String, Object> payload) {
+        String nombre = (String) payload.get("nombre");
+        
+        // Validación robusta de idUsuario ya sea plano o anidado
+        Object idUsuarioObj = payload.get("idUsuario");
+        if (idUsuarioObj == null && payload.containsKey("usuario")) {
+            Map<?, ?> usrMap = (Map<?, ?>) payload.get("usuario");
+            idUsuarioObj = usrMap.get("idUsuario");
+        }
+
+        if (idUsuarioObj == null) {
             return ResponseEntity.badRequest().body("El usuario es requerido para crear el cultivo.");
         }
 
-        Usuario usuarioExistente = usuarioService.obtenerPorId(usuarioRequest.getIdUsuario())
-                .orElse(null);
+        Integer idUsuario = Integer.parseInt(idUsuarioObj.toString());
+        Usuario usuarioExistente = usuarioService.obtenerPorId(idUsuario).orElse(null);
         if (usuarioExistente == null) {
             return ResponseEntity.badRequest().body("El usuario indicado no existe. Verifica la sesion iniciada.");
         }
 
+        // Mapeo seguro de los valores numéricos provenientes del JSON
+        Cultivo cultivo = new Cultivo();
+        cultivo.setNombre(nombre);
         cultivo.setUsuario(usuarioExistente);
+        cultivo.setTemperaturaMin(payload.get("temperaturaMin") != null ? Float.parseFloat(payload.get("temperaturaMin").toString()) : null);
+        cultivo.setTemperaturaMax(payload.get("temperaturaMax") != null ? Float.parseFloat(payload.get("temperaturaMax").toString()) : null);
+        cultivo.setHumedadMin(payload.get("humedadMin") != null ? Float.parseFloat(payload.get("humedadMin").toString()) : null);
+        cultivo.setHumedadMax(payload.get("humedadMax") != null ? Float.parseFloat(payload.get("humedadMax").toString()) : null);
+        cultivo.setLuzMin(payload.get("luzMin") != null ? Float.parseFloat(payload.get("luzMin").toString()) : null);
+        cultivo.setLuzMax(payload.get("luzMax") != null ? Float.parseFloat(payload.get("luzMax").toString()) : null);
+
         Cultivo nuevo = cultivoService.guardar(cultivo);
-        return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new CultivoDTO(nuevo));
     }
 
-    // Actualizar parámetros de un cultivo existente
-    @PutMapping("/{id}")
-    public ResponseEntity<Cultivo> actualizar(@PathVariable Integer id, @RequestBody Cultivo cultivo) {
+    // PUT: Actualizar parámetros de un cultivo existente
+    @PutMapping({"/api/cultivos/{id}", "/api/crops/{id}"})
+    public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody Cultivo cultivo) {
         if (!cultivoService.obtenerPorId(id).isPresent()) {
             return ResponseEntity.notFound().build();
         }
-        cultivo.setIdCultivo(id); // Aseguramos que se actualice el correcto
-        return ResponseEntity.ok(cultivoService.guardar(cultivo));
+        cultivo.setIdCultivo(id); 
+        Cultivo actualizado = cultivoService.guardar(cultivo);
+        return ResponseEntity.ok(new CultivoDTO(actualizado));
     }
 
-    // Eliminar un cultivo
-    @DeleteMapping("/{id}")
+    // DELETE: Eliminar un cultivo
+    @DeleteMapping({"/api/cultivos/{id}", "/api/crops/{id}"})
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         cultivoService.eliminar(id);
         return ResponseEntity.noContent().build();

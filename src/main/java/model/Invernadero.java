@@ -7,7 +7,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.FetchType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 
 /**
  *
@@ -34,6 +39,16 @@ public class Invernadero {
 
     @Column(length = 50)
     private String estado;
+
+    // Relación para recuperar los sensores vinculados a este invernadero
+    @OneToMany(mappedBy = "invernadero", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<InvernaderoSensor> invernaderoSensores;
+
+    // Relación para recuperar los actuadores vinculados a este invernadero
+    @OneToMany(mappedBy = "invernadero", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<InvernaderoActuador> invernaderoActuadores;
 
     public Integer getIdInvernadero() {
         return idInvernadero;
@@ -75,4 +90,19 @@ public class Invernadero {
         this.estado = estado;
     }
 
+    public List<InvernaderoSensor> getInvernaderoSensores() {
+        return invernaderoSensores;
+    }
+
+    public void setInvernaderoSensores(List<InvernaderoSensor> invernaderoSensores) {
+        this.invernaderoSensores = invernaderoSensores;
+    }
+
+    public List<InvernaderoActuador> getInvernaderoActuadores() {
+        return invernaderoActuadores;
+    }
+
+    public void setInvernaderoActuadores(List<InvernaderoActuador> invernaderoActuadores) {
+        this.invernaderoActuadores = invernaderoActuadores;
+    }
 }

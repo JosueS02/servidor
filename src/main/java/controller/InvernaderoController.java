@@ -1,38 +1,34 @@
 package controller;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import model.Invernadero;
+import model.Usuario;
+import model.CatalogoSensor;
+import model.CatalogoActuador;
+import model.InvernaderoSensor;
+import model.InvernaderoActuador;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import com.fasterxml.jackson.annotation.JsonProperty; // Importante para blindar los nombres del JSON
+
 import repository.CatalogoActuadorRepository;
 import repository.CatalogoSensorRepository;
 import repository.InvernaderoActuadorRepository;
 import repository.InvernaderoSensorRepository;
-import model.CatalogoActuador;
-import model.CatalogoSensor;
-import model.InvernaderoActuador;
-import model.InvernaderoSensor;
-import model.Usuario;
 import service.InvernaderoService;
 import service.UsuarioService;
 
-/**
- *
- * @author josue
- */
 @RestController
-@RequestMapping("/api/invernaderos")
-@CrossOrigin(origins = "*") // ¡Súper importante! Permite que tu Frontend se conecte sin errores de CORS
+@RequestMapping({"/api/invernaderos", "/api/greenhouses"})
+@CrossOrigin(origins = "*", allowedHeaders = "*", exposedHeaders = "X-Total-Count")
 public class InvernaderoController {
 
     @Autowired
@@ -48,47 +44,135 @@ public class InvernaderoController {
     @Autowired
     private InvernaderoActuadorRepository invernaderoActuadorRepository;
 
-    // GET: http://localhost:8080/api/invernaderos
-    @GetMapping
-    public ResponseEntity<List<Invernadero>> listarTodos() {
-        return ResponseEntity.ok(invernaderoService.obtenerTodos());
+    // CLASE INTERNA DTO COMPLETAMENTE BLINDADA CON GETTERS, SETTERS Y JSONPROPERTY
+    public static class InvernaderoDTO {
+        @JsonProperty("idInvernadero")
+        private String idInvernadero;
+
+        @JsonProperty("idUsuario")
+        private String idUsuario;
+
+        @JsonProperty("nombre")
+        private String nombre;
+
+        @JsonProperty("ubicacion")
+        private String ubicacion;
+
+        @JsonProperty("estado")
+        private String estado;
+
+        @JsonProperty("nombresSensor")
+        private List<String> nombresSensor;
+
+        @JsonProperty("nombresActuador")
+        private List<String> nombresActuador;
+
+        public InvernaderoDTO(Invernadero inv) {
+            this.idInvernadero = String.valueOf(inv.getIdInvernadero());
+            this.idUsuario = inv.getUsuario() != null ? String.valueOf(inv.getUsuario().getIdUsuario()) : null;
+            this.nombre = inv.getNombre();
+            this.ubicacion = inv.getUbicacion();
+            this.estado = inv.getEstado();
+            
+            this.nombresSensor = inv.getInvernaderoSensores() != null ? 
+                inv.getInvernaderoSensores().stream()
+                    .map(is -> is.getSensor().getNombre())
+                    .collect(Collectors.toList()) : new ArrayList<>();
+                    
+            this.nombresActuador = inv.getInvernaderoActuadores() != null ? 
+                inv.getInvernaderoActuadores().stream()
+                    .map(ia -> ia.getActuador().getNombre())
+                    .collect(Collectors.toList()) : new ArrayList<>();
+        }
+
+        // Getters y Setters explícitos para asegurar la correcta serialización de Jackson
+        public String getIdInvernadero() { return idInvernadero; }
+        public void setIdInvernadero(String idInvernadero) { this.idInvernadero = idInvernadero; }
+
+        public String getIdUsuario() { return idUsuario; }
+        public void setIdUsuario(String idUsuario) { this.idUsuario = idUsuario; }
+
+        public String getNombre() { return nombre; }
+        public void setNombre(String nombre) { this.nombre = nombre; }
+
+        public String getUbicacion() { return ubicacion; }
+        public void setUbicacion(String ubicacion) { this.ubicacion = ubicacion; }
+
+        public String getEstado() { return estado; }
+        public void setEstado(String estado) { this.estado = estado; }
+
+        public List<String> getNombresSensor() { return nombresSensor; }
+        public void setNombresSensor(List<String> nombresSensor) { this.nombresSensor = nombresSensor; }
+
+        public List<String> getNombresActuador() { return nombresActuador; }
+        public void setNombresActuador(List<String> nombresActuador) { this.nombresActuador = nombresActuador; }
     }
 
-    // GET: http://localhost:8080/api/invernaderos/1
+    @GetMapping
+    public ResponseEntity<List<InvernaderoDTO>> listarTodos(@RequestParam(value = "userId", required = false) Integer userId) {
+        List<Invernadero> todos = invernaderoService.obtenerTodos();
+        
+        if (userId != null) {
+            todos = todos.stream()
+                .filter(inv -> inv.getUsuario() != null && userId.equals(inv.getUsuario().getIdUsuario()))
+                .collect(Collectors.toList());
+        }
+
+        List<InvernaderoDTO> dtos = todos.stream()
+            .map(InvernaderoDTO::new)
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(dtos.size()))
+                .body(dtos);
+    }
+
     @GetMapping("/{id}")
-    public ResponseEntity<Invernadero> obtenerPorId(@PathVariable Integer id) {
+    public ResponseEntity<InvernaderoDTO> obtenerPorId(@PathVariable Integer id) {
         Optional<Invernadero> invernadero = invernaderoService.obtenerPorId(id);
-        return invernadero.map(ResponseEntity::ok)
+        return invernadero.map(inv -> ResponseEntity.ok(new InvernaderoDTO(inv)))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // POST: http://localhost:8080/api/invernaderos (Para enviar JSON desde el Front y guardarlo)
     @PostMapping
-    public ResponseEntity<?> crear(@RequestBody Invernadero invernadero) {
-        Usuario usuarioRequest = invernadero.getUsuario();
-        if (usuarioRequest == null || usuarioRequest.getIdUsuario() == null) {
-            return ResponseEntity.badRequest().body("El usuario es requerido para crear el invernadero.");
+    public ResponseEntity<?> crear(@RequestBody Map<String, Object> payload) {
+        String nombre = (String) payload.get("nombre");
+        String ubicacion = (String) payload.get("ubicacion");
+        String estado = (String) payload.get("estado");
+        
+        Object idUsuarioObj = payload.get("idUsuario");
+        if (idUsuarioObj == null && payload.containsKey("usuario")) {
+            Map<?, ?> usrMap = (Map<?, ?>) payload.get("usuario");
+            idUsuarioObj = usrMap.get("idUsuario");
         }
 
-        Usuario usuarioExistente = usuarioService.obtenerPorId(usuarioRequest.getIdUsuario())
-                .orElse(null);
+        if (idUsuarioObj == null) {
+            return ResponseEntity.badRequest().body("El campo idUsuario es requerido para crear el invernadero.");
+        }
+
+        Integer idUsuario = Integer.parseInt(idUsuarioObj.toString());
+        Usuario usuarioExistente = usuarioService.obtenerPorId(idUsuario).orElse(null);
+        
         if (usuarioExistente == null) {
-            return ResponseEntity.badRequest().body("El usuario indicado no existe. Verifica la sesion iniciada.");
+            return ResponseEntity.badRequest().body("El usuario indicado no existe. Verifica la sesión iniciada.");
         }
 
+        Invernadero invernadero = new Invernadero();
+        invernadero.setNombre(nombre);
+        invernadero.setUbicacion(ubicacion);
+        invernadero.setEstado(estado);
         invernadero.setUsuario(usuarioExistente);
+
         Invernadero nuevoInvernadero = invernaderoService.guardar(invernadero);
-        return ResponseEntity.status(HttpStatus.CREATED).body(nuevoInvernadero);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new InvernaderoDTO(nuevoInvernadero));
     }
 
-    // POST: http://localhost:8080/api/invernaderos/{id}/sensores
-    // Body: { "sensores": ["Humedad","Temperatura"] }
     @PostMapping("/{id}/sensores")
-    public ResponseEntity<?> agregarSensores(@PathVariable Integer id, @RequestBody java.util.Map<String, java.util.List<String>> body) {
-        java.util.List<String> sensores = body.get("sensores");
+    public ResponseEntity<?> agregarSensores(@PathVariable Integer id, @RequestBody Map<String, List<String>> body) {
+        List<String> sensores = body.get("sensores");
         if (sensores == null) return ResponseEntity.badRequest().body("Campo 'sensores' es requerido");
 
-        java.util.Optional<Invernadero> opt = invernaderoService.obtenerPorId(id);
+        Optional<Invernadero> opt = invernaderoService.obtenerPorId(id);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         Invernadero invernadero = opt.get();
 
@@ -107,17 +191,15 @@ public class InvernaderoController {
             invernaderoSensorRepository.save(invSensor);
         }
 
-        return ResponseEntity.ok().body("Sensores agregados");
+        return ResponseEntity.ok().body(Map.of("message", "Sensores agregados con éxito"));
     }
 
-    // POST: http://localhost:8080/api/invernaderos/{id}/actuadores
-    // Body: { "actuadores": ["Riego","Ventilador"] }
     @PostMapping("/{id}/actuadores")
-    public ResponseEntity<?> agregarActuadores(@PathVariable Integer id, @RequestBody java.util.Map<String, java.util.List<String>> body) {
-        java.util.List<String> actuadores = body.get("actuadores");
+    public ResponseEntity<?> agregarActuadores(@PathVariable Integer id, @RequestBody Map<String, List<String>> body) {
+        List<String> actuadores = body.get("actuadores");
         if (actuadores == null) return ResponseEntity.badRequest().body("Campo 'actuadores' es requerido");
 
-        java.util.Optional<Invernadero> opt = invernaderoService.obtenerPorId(id);
+        Optional<Invernadero> opt = invernaderoService.obtenerPorId(id);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
         Invernadero invernadero = opt.get();
 
@@ -137,10 +219,9 @@ public class InvernaderoController {
             invernaderoActuadorRepository.save(invAct);
         }
 
-        return ResponseEntity.ok().body("Actuadores agregados");
+        return ResponseEntity.ok().body(Map.of("message", "Actuadores agregados con éxito"));
     }
 
-    // DELETE: http://localhost:8080/api/invernaderos/1
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         invernaderoService.eliminar(id);
