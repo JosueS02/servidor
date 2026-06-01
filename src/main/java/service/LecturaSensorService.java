@@ -2,6 +2,7 @@ package service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import model.LecturaSensor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,9 +23,23 @@ public class LecturaSensorService {
         return lecturaSensorRepository.findAll();
     }
 
-    // EL MÁS IMPORTANTE: Obtener el historial de un sensor específico (ej. "Dame la temperatura del Invernadero 1")
-    public List<LecturaSensor> obtenerHistorialPorSensor(Integer idInvSensor) {
-        return lecturaSensorRepository.findByInvernaderoSensor_IdInvSensorOrderByFechaHoraDesc(idInvSensor);
+public Optional<LecturaSensor>
+obtenerUltimaLectura(
+        Integer idInvSensor
+) {
+
+    return lecturaSensorRepository.findTopByInvernaderoSensor_IdInvSensorOrderByIdLecturaDesc(idInvSensor);                                
+}
+
+    public List<LecturaSensor>
+    obtenerHistorialPorSensor(
+            Integer idInvSensor
+    ) {
+
+        return lecturaSensorRepository
+                .findByInvernaderoSensor_IdInvSensorOrderByIdLecturaAsc(
+                        idInvSensor
+                );
     }
 
     // Guardar una nueva lectura

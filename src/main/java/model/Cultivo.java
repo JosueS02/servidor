@@ -40,7 +40,9 @@ public class Cultivo {
     @Column(name = "luz_min")
     private Float luzMin;
     @Column(name = "luz_max")
-    private Float luzMax;
+    private Float luzMax;    
+    @Column(name = "co2_max")
+    private Float co2Max;
 
     public Integer getIdCultivo() {
         return idCultivo;
@@ -112,6 +114,14 @@ public class Cultivo {
 
     public void setLuzMax(Float luzMax) {
         this.luzMax = luzMax;
+    }
+
+    public Float getCo2Max() {
+        return co2Max;
+    }
+
+    public void setCo2Max(Float co2Max) {
+        this.co2Max = co2Max;
     }
 
 }

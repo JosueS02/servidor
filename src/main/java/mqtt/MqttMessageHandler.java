@@ -43,9 +43,9 @@ public class MqttMessageHandler {
 
             Integer idInvSensor = jsonNode.get("idInvSensor").asInt();
             Float valor = (float) jsonNode.get("valor").asDouble();
-
+System.out.println("Payload recibido: " + payload);
+System.out.println("ID recibido: " + idInvSensor);
             InvernaderoSensor sensor = invSensorRepository.findById(idInvSensor).orElse(null);
-
             if (sensor != null) {
                 // 1. Persistencia en Base de Datos
                 LecturaSensor nuevaLectura = new LecturaSensor();

@@ -34,6 +34,8 @@ public class MqttConfig {
     @Value("${mqtt.topic.sensores}")
     private String topicSensores;
 
+    
+    
     @Bean
     public MqttPahoClientFactory mqttClientFactory() {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
@@ -85,4 +87,6 @@ public class MqttConfig {
         factoryBean.setDefaultRequestChannelName("mqttOutboundChannel");
         return factoryBean;
     }
+    
+    
 }

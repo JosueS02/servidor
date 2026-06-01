@@ -25,4 +25,5 @@ public interface PlantacionRepository extends JpaRepository<Plantacion, Integer>
 			Integer idInvernadero,
 			Integer idUsuario,
 			String estado);
+     
 }

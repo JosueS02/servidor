@@ -35,9 +35,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // Deja pasar pre-flights
                 // Endpoints públicos (registro, login, etc.)
-                .requestMatchers("/api/usuarios/registro", "/api/auth/login", "/error").permitAll()
+                .requestMatchers("/api/usuarios/registro", "/api/auth/login", "/error", "/api/simulation/**").permitAll()
                 // Endpoints de invernadero y cultivo sin autenticación (para desarrollo)
-                .requestMatchers("/api/invernaderos", "/api/invernaderos/**", "/api/cultivos", "/api/cultivos/**").permitAll()
+                .requestMatchers("/api/invernaderos", "/api/invernaderos/**", "/api/cultivos", "/api/cultivos/**", "/api/simulation/**").permitAll()
                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));

@@ -33,7 +33,7 @@ public class LecturaSensorController {
     }
 
     // GET: http://localhost:8080/api/lecturas/sensor/1
-    // (Este es el que usará tu Front para graficar un sensor en específico)
+    // Este endpoint se usa para graficar el historial de un sensor en específico.
     @GetMapping("/sensor/{idInvSensor}")
     public ResponseEntity<List<LecturaSensor>> obtenerPorSensor(@PathVariable Integer idInvSensor) {
         List<LecturaSensor> historial = lecturaSensorService.obtenerHistorialPorSensor(idInvSensor);
