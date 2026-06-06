@@ -24,7 +24,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws-invernadero")
-                .setAllowedOrigins("*") // En producción, pon aquí la URL de tu front
+                .setAllowedOriginPatterns("*") // En producción, pon aquí la URL de tu front
                 .withSockJS(); // Soporte para navegadores viejos
     }
 }

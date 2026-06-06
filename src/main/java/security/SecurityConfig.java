@@ -34,10 +34,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // Deja pasar pre-flights
-                // Endpoints públicos (registro, login, etc.)
-                .requestMatchers("/api/usuarios/registro", "/api/auth/login", "/error", "/api/simulation/**").permitAll()
+                // 👇 AQUI AGREGAMOS LA RUTA DEL WEBSOCKET ("/ws-invernadero/**") 👇
+                .requestMatchers("/api/usuarios/registro", "/api/auth/login", "/error", "/api/simulation/**", "/ws-invernadero/**").permitAll()
                 // Endpoints de invernadero y cultivo sin autenticación (para desarrollo)
-                .requestMatchers("/api/invernaderos", "/api/invernaderos/**", "/api/cultivos", "/api/cultivos/**", "/api/simulation/**").permitAll()
+                .requestMatchers("/api/invernaderos", "/api/invernaderos/**", "/api/cultivos", "/api/cultivos/**").permitAll()
                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
