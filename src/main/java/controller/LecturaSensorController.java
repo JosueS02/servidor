@@ -50,4 +50,5 @@ public class LecturaSensorController {
         LecturaSensor nuevaLectura = lecturaSensorService.guardar(lectura);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaLectura);
     }
+    
 }
