@@ -55,55 +55,82 @@ public class RuleEngineService {
         System.out.println("Sensor: " + tipoMedicion);
         System.out.println("Valor: " + valorActual);
 
-        // Obtenemos el ID del invernadero de forma dinámica para enviar los comandos
-        Integer idInvernadero = invernadero.getIdInvernadero();
-
         // Obtener cultivo activo
         Cultivo cultivo =
                 obtenerCultivoActivo(
-                        idInvernadero
+                        invernadero.getIdInvernadero()
                 );
 
         if (cultivo == null) {
             return;
         }
 
-        // Obtener actuadores
-        List<InvernaderoActuador> actuadores =
-                actuadorRepository.findAll();
+        System.out.println(
+                "INVERNADERO: " + invernadero.getIdInvernadero()
+        );
 
-        // ===== REGLAS =====
+        System.out.println(
+                "CULTIVO: " + cultivo.getNombre()
+        );
+
+        System.out.println(
+                "LUZ MIN: " + cultivo.getLuzMin()
+        );
+
+        System.out.println(
+                "LUZ MAX: " + cultivo.getLuzMax()
+        );
+        
+        // Obtener actuadores
+// Obtener actuadores SOLO del invernadero que envió la lectura
+        List<InvernaderoActuador> actuadores =actuadorRepository.findByInvernadero_IdInvernadero(invernadero.getIdInvernadero());
+System.out.println(
+        "ACTUADORES ENCONTRADOS:"
+);
+
+        actuadores.forEach(a ->
+        System.out.println(
+                a.getActuador().getNombre()
+                + " | INV="
+                + a.getInvernadero().getIdInvernadero()
+                + " | ESTADO="
+                + a.getEstadoOperativo()
+        )
+);
+        
+
+// ===== REGLAS =====
 
         if (tipoMedicion.contains("temperatura")) {
+
             evaluarTemperatura(
                     valorActual,
                     cultivo,
-                    actuadores,
-                    idInvernadero
+                    actuadores
             );
 
         } else if (tipoMedicion.contains("humedad")) {
+
             evaluarHumedad(
                     valorActual,
                     cultivo,
-                    actuadores,
-                    idInvernadero
+                    actuadores
             );
 
         } else if (tipoMedicion.contains("luminosidad")) {
+
             evaluarLuminosidad(
                     valorActual,
                     cultivo,
-                    actuadores,
-                    idInvernadero
+                    actuadores
             );
 
         } else if (tipoMedicion.contains("co2")) {
+
             evaluarCO2(
                     valorActual,
                     cultivo,
-                    actuadores,
-                    idInvernadero
+                    actuadores
             );
         }
     }
@@ -114,8 +141,7 @@ public class RuleEngineService {
     private void evaluarTemperatura(
             Float tempActual,
             Cultivo cultivo,
-            List<InvernaderoActuador> actuadores,
-            Integer idInvernadero
+            List<InvernaderoActuador> actuadores
     ) {
 
         InvernaderoActuador ventilador =
@@ -123,8 +149,7 @@ public class RuleEngineService {
                 .filter(a ->
                         a.getActuador()
                         .getNombre()
-                        .toLowerCase()
-                        .contains("ventilador")
+                        .equalsIgnoreCase("Ventilador")
                 )
                 .findFirst()
                 .orElse(null);
@@ -147,8 +172,7 @@ public class RuleEngineService {
 
                 enviarComandoMQTT(
                         "VENTILADOR",
-                        "ON",
-                        idInvernadero
+                        "ON"
                 );
 
                 ventilador.setEstadoOperativo("ON");
@@ -177,8 +201,7 @@ public class RuleEngineService {
 
             enviarComandoMQTT(
                     "VENTILADOR",
-                    "OFF",
-                    idInvernadero
+                    "OFF"
             );
 
             ventilador.setEstadoOperativo("OFF");
@@ -187,7 +210,7 @@ public class RuleEngineService {
 
             System.out.println(
                     "🌡️ VENTILADOR DESACTIVADO"
-            );
+                );
         }
     }
 
@@ -197,8 +220,7 @@ public class RuleEngineService {
     private void evaluarHumedad(
             Float humActual,
             Cultivo cultivo,
-            List<InvernaderoActuador> actuadores,
-            Integer idInvernadero
+            List<InvernaderoActuador> actuadores
     ) {
 
         InvernaderoActuador bomba =
@@ -206,8 +228,7 @@ public class RuleEngineService {
                 .filter(a ->
                         a.getActuador()
                         .getNombre()
-                        .toLowerCase()
-                        .contains("bomba")
+                        .equalsIgnoreCase("Riego")
                 )
                 .findFirst()
                 .orElse(null);
@@ -230,8 +251,7 @@ public class RuleEngineService {
 
                 enviarComandoMQTT(
                         "BOMBA",
-                        "ON",
-                        idInvernadero
+                        "ON"
                 );
 
                 bomba.setEstadoOperativo("ON");
@@ -259,9 +279,8 @@ public class RuleEngineService {
             );
 
             enviarComandoMQTT(
-                        "BOMBA",
-                        "OFF",
-                        idInvernadero
+                    "BOMBA",
+                    "OFF"
             );
 
             bomba.setEstadoOperativo("OFF");
@@ -270,7 +289,7 @@ public class RuleEngineService {
 
             System.out.println(
                     "💧 BOMBA DESACTIVADA"
-            );
+                );
         }
     }
 
@@ -280,17 +299,17 @@ public class RuleEngineService {
     private void evaluarLuminosidad(
             Float luzActual,
             Cultivo cultivo,
-            List<InvernaderoActuador> actuadores,
-            Integer idInvernadero
+            List<InvernaderoActuador> actuadores
     ) {
-
+System.out.println(
+            "LUMINOSIDAD ACTUAL: " + luzActual
+    );
         InvernaderoActuador luz =
                 actuadores.stream()
                 .filter(a ->
                         a.getActuador()
                         .getNombre()
-                        .toLowerCase()
-                        .contains("luz")
+                        .equalsIgnoreCase("Luz")
                 )
                 .findFirst()
                 .orElse(null);
@@ -300,8 +319,7 @@ public class RuleEngineService {
                 .filter(a ->
                         a.getActuador()
                         .getNombre()
-                        .toLowerCase()
-                        .contains("malla")
+                        .equalsIgnoreCase("Malla")
                 )
                 .findFirst()
                 .orElse(null);
@@ -324,8 +342,7 @@ public class RuleEngineService {
 
                     enviarComandoMQTT(
                             "LUZ",
-                            "ON",
-                            idInvernadero
+                            "ON"
                     );
 
                     luz.setEstadoOperativo("ON");
@@ -337,7 +354,6 @@ public class RuleEngineService {
                     );
                 }
 
-            // CORRECCIÓN APLICADA: Ahora evalúa getLuzMin() en vez de getTemperaturaMin()
             } else if (
                     luzActual >= cultivo.getLuzMin()
                     &&
@@ -353,8 +369,7 @@ public class RuleEngineService {
 
                 enviarComandoMQTT(
                         "LUZ",
-                        "OFF",
-                        idInvernadero
+                        "OFF"
                 );
 
                 luz.setEstadoOperativo("OFF");
@@ -371,7 +386,16 @@ public class RuleEngineService {
         // MALLA
         // =========================
         if (malla != null) {
-
+System.out.println(
+        "MALLA ACTUAL: "
+        + malla.getEstadoOperativo()
+);
+System.out.println(
+        "Comparando -> "
+        + luzActual
+        + " > "
+        + cultivo.getLuzMax()
+);
             if (luzActual > cultivo.getLuzMax()) {
 
                 if (!"ON".equals(
@@ -385,8 +409,7 @@ public class RuleEngineService {
 
                     enviarComandoMQTT(
                             "MALLA",
-                            "ON",
-                            idInvernadero
+                            "ON"
                     );
 
                     malla.setEstadoOperativo("ON");
@@ -413,16 +436,15 @@ public class RuleEngineService {
 
                 enviarComandoMQTT(
                         "MALLA",
-                        "OFF",
-                        idInvernadero
-                    );
+                        "OFF"
+                );
 
                 malla.setEstadoOperativo("OFF");
 
                 actuadorRepository.save(malla);
 
                 System.out.println(
-                        "☀️ MALLA DESACTIVADA"
+                            "☀️ MALLA DESACTIVADA"
                 );
             }
         }
@@ -434,8 +456,7 @@ public class RuleEngineService {
     private void evaluarCO2(
             Float co2Actual,
             Cultivo cultivo,
-            List<InvernaderoActuador> actuadores,
-            Integer idInvernadero
+            List<InvernaderoActuador> actuadores
     ) {
 
         InvernaderoActuador extractor =
@@ -443,8 +464,7 @@ public class RuleEngineService {
                 .filter(a ->
                         a.getActuador()
                         .getNombre()
-                        .toLowerCase()
-                        .contains("extractor")
+                        .equalsIgnoreCase("Extractores de Aire")
                 )
                 .findFirst()
                 .orElse(null);
@@ -467,8 +487,7 @@ public class RuleEngineService {
 
                 enviarComandoMQTT(
                         "EXTRACTOR",
-                        "ON",
-                        idInvernadero
+                        "ON"
                 );
 
                 extractor.setEstadoOperativo("ON");
@@ -496,9 +515,8 @@ public class RuleEngineService {
             );
 
             enviarComandoMQTT(
-                        "EXTRACTOR",
-                        "OFF",
-                        idInvernadero
+                    "EXTRACTOR",
+                    "OFF"
             );
 
             extractor.setEstadoOperativo("OFF");
@@ -506,8 +524,8 @@ public class RuleEngineService {
             actuadorRepository.save(extractor);
 
             System.out.println(
-                    "🌫️ EXTRACTOR DESACTIVADO"
-            );
+                        "🌫️ EXTRACTOR DESACTIVADO"
+                );
         }
     }
 
@@ -516,24 +534,32 @@ public class RuleEngineService {
     // =========================================================
     private void enviarComandoMQTT(
             String actuador,
-            String accion,
-            Integer idInvernadero) { // <-- Ahora recibe el ID
+            String accion
+    ) {
 
         try {
-            ComandoActuadorDTO dto = new ComandoActuadorDTO(actuador, accion);
-            String payload = mapper.writeValueAsString(dto);
 
-            // Construimos el tópico dinámicamente
-            String topico = "invernadero/" + idInvernadero + "/comandos";
+            ComandoActuadorDTO dto =
+                    new ComandoActuadorDTO(
+                            actuador,
+                            accion
+                    );
 
-            mqttGateway.enviarComando(topico, payload);
+            String payload =
+                    mapper.writeValueAsString(dto);
+
+            mqttGateway.enviarComando(
+                    "invernadero/1/comandos",
+                    payload
+            );
 
             System.out.println(
                     "[RULE ENGINE MQTT] "
-                    + payload + " -> Tópico: " + topico
+                    + payload
             );
 
         } catch (Exception e) {
+
             e.printStackTrace();
         }
     }
@@ -549,7 +575,7 @@ public class RuleEngineService {
                 plantacionRepository
                 .findByInvernadero_IdInvernaderoAndEstado(
                         idInvernadero,
-                        "ACTIVO"
+                        "ACTIVA"
                 )
                 .orElse(null);
 

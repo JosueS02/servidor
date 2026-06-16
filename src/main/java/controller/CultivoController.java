@@ -27,8 +27,8 @@ public class CultivoController {
 
     // Clase interna DTO para asegurar compatibilidad total de nombres de variables con el Frontend
     public static class CultivoDTO {
-        public String id; // Algunos componentes del front buscan 'id'
-        public String idCultivo; // Otros buscan 'idCultivo'
+        public String id; 
+        public String idCultivo; 
         public String idUsuario;
         public UsuarioDTO usuario;
         public String nombre;
@@ -38,6 +38,7 @@ public class CultivoController {
         public Float humedadMax;
         public Float luzMin;
         public Float luzMax;
+        public Float co2Max; // <-- 1. SE AGREGÓ ESTA LÍNEA
 
         public CultivoDTO(Cultivo c) {
             this.id = String.valueOf(c.getIdCultivo());
@@ -51,6 +52,7 @@ public class CultivoController {
             this.humedadMax = c.getHumedadMax();
             this.luzMin = c.getLuzMin();
             this.luzMax = c.getLuzMax();
+            this.co2Max = c.getCo2Max(); // <-- 2. SE AGREGÓ ESTA LÍNEA PARA ENVIARLO AL FRONTEND
         }
     }
 
@@ -114,6 +116,9 @@ public class CultivoController {
         cultivo.setHumedadMax(payload.get("humedadMax") != null ? Float.parseFloat(payload.get("humedadMax").toString()) : null);
         cultivo.setLuzMin(payload.get("luzMin") != null ? Float.parseFloat(payload.get("luzMin").toString()) : null);
         cultivo.setLuzMax(payload.get("luzMax") != null ? Float.parseFloat(payload.get("luzMax").toString()) : null);
+        
+        // <-- 3. SE AGREGÓ ESTA LÍNEA PARA LEER EL CO2 DEL JSON Y GUARDARLO EN LA BD
+        cultivo.setCo2Max(payload.get("co2Max") != null ? Float.parseFloat(payload.get("co2Max").toString()) : null); 
 
         Cultivo nuevo = cultivoService.guardar(cultivo);
         return ResponseEntity.status(HttpStatus.CREATED).body(new CultivoDTO(nuevo));

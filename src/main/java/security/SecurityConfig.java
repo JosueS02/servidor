@@ -33,11 +33,20 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults()) // Activa el CORS usando el bean global que creamos abajo
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // Deja pasar pre-flights
-                // 👇 AQUI AGREGAMOS LA RUTA DEL WEBSOCKET ("/ws-invernadero/**") 👇
-                .requestMatchers("/api/usuarios/registro", "/api/auth/login", "/error", "/api/simulation/**", "/ws-invernadero/**").permitAll()
-                // Endpoints de invernadero y cultivo sin autenticación (para desarrollo)
-                .requestMatchers("/api/invernaderos", "/api/invernaderos/**", "/api/cultivos", "/api/cultivos/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(
+                        "/api/usuarios/registro",
+                        "/api/auth/login",
+                        "/error",
+                        "/api/simulation/**",
+                        "/ws-invernadero/**"
+                ).permitAll()
+                .requestMatchers(
+                        "/api/invernaderos", "/api/invernaderos/**",
+                        "/api/cultivos", "/api/cultivos/**",
+                        "/api/sensores", "/api/sensores/**",
+                        "/api/actuadores", "/api/actuadores/**"
+                ).permitAll()
                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
@@ -55,8 +64,11 @@ public class SecurityConfig {
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://localhost:5173");
         config.addAllowedOrigin("http://127.0.0.1:5173");
+        config.addAllowedOrigin("http://localhost:5174");
+        config.addAllowedOrigin("http://127.0.0.1:5174");
         config.addAllowedOrigin("http://localhost:4173");
         config.addAllowedOrigin("http://127.0.0.1:4173");
+        config.addAllowedOrigin("http://172.20.10.2:5173");
         config.addAllowedHeader("*"); // Permite cualquier cabecera (incluyendo Authorization)
         config.addAllowedMethod("*"); // Permite GET, POST, PUT, DELETE, OPTIONS
 

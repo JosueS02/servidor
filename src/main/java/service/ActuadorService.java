@@ -38,7 +38,9 @@ public class ActuadorService {
     public void cambiarEstado(Integer idInvActuador, Boolean nuevoEstado) {
         InvernaderoActuador actuador = actuadorRepository.findById(idInvActuador)
                 .orElseThrow(() -> new RuntimeException("Actuador no encontrado"));
-
+    
+        actuador.setEstadoOperativo(nuevoEstado ? "ON" : "OFF");
+        actuadorRepository.save(actuador);
         // 1. Guardar en el historial de la BD
         HistorialActuador registro = new HistorialActuador();
         registro.setInvernaderoActuador(actuador);

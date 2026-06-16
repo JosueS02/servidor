@@ -22,4 +22,9 @@ public interface LecturaSensorRepository extends JpaRepository<LecturaSensor, Lo
     List<LecturaSensor>
     findByInvernaderoSensor_IdInvSensorOrderByIdLecturaAsc(Integer idInvSensor);
 
+        Optional<LecturaSensor>
+        findTopByInvernaderoSensor_Invernadero_IdInvernaderoAndInvernaderoSensor_Sensor_NombreContainingIgnoreCaseOrderByIdLecturaDesc(
+                Integer idInvernadero,
+                String nombreSensor
+        );
 }

@@ -261,7 +261,7 @@ public class InvernaderoController {
             InvernaderoActuador invAct = new InvernaderoActuador();
             invAct.setInvernadero(invernadero);
             invAct.setActuador(catalogo);
-            invAct.setEstadoOperativo("ACTIVO");
+            invAct.setEstadoOperativo("OFF");
             invernaderoActuadorRepository.save(invAct);
         }
 

@@ -15,6 +15,7 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "Invernadero_Actuador")
+
 public class InvernaderoActuador {
 
     @Id

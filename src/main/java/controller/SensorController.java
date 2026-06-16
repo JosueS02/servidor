@@ -25,7 +25,7 @@ public class SensorController {
     private InvernaderoSensorRepository invernaderoSensorRepository;
 
     // Listar sensores de un invernadero
-    @PutMapping("/invernadero/{id}")
+    @GetMapping("/invernadero/{id}")
     public List<InvernaderoSensor> listar(@PathVariable Integer id) {
         return invernaderoSensorRepository.findAll().stream()
                 .filter(sensor -> sensor.getInvernadero() != null

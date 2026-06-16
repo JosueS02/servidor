@@ -39,7 +39,7 @@ public class DashboardRealtimeService {
         SimulationRealtimeDTO dto =
                 new SimulationRealtimeDTO();
 
-        cargarSensores(dto);
+        cargarSensores(dto,idInvernadero);
 
         cargarActuadores(
                 dto,
@@ -55,17 +55,83 @@ public class DashboardRealtimeService {
     }
 
     private void cargarSensores(
-            SimulationRealtimeDTO dto
-    ) {
+        SimulationRealtimeDTO dto,
+        Integer idInvernadero
+) {
 
-        cargarTemperatura(dto);
+    cargarTemperatura(dto, idInvernadero);
+    cargarHumedad(dto, idInvernadero);
+    cargarLuminosidad(dto, idInvernadero);
+    cargarCO2(dto, idInvernadero);
+}
 
-        cargarHumedad(dto);
+private void cargarTemperatura(
+        SimulationRealtimeDTO dto,
+        Integer idInvernadero
+) {
 
-        cargarLuminosidad(dto);
+    Optional<LecturaSensor> lectura =
+            lecturaRepository
+            .findTopByInvernaderoSensor_Invernadero_IdInvernaderoAndInvernaderoSensor_Sensor_NombreContainingIgnoreCaseOrderByIdLecturaDesc(
+                    idInvernadero,
+                    "Temperatura"
+            );
 
-        cargarCO2(dto);
-    }
+    lectura.ifPresent(l ->
+            dto.setTemperatura(l.getValor())
+    );
+}
+
+private void cargarHumedad(
+        SimulationRealtimeDTO dto,
+        Integer idInvernadero
+) {
+
+    Optional<LecturaSensor> lectura =
+            lecturaRepository
+            .findTopByInvernaderoSensor_Invernadero_IdInvernaderoAndInvernaderoSensor_Sensor_NombreContainingIgnoreCaseOrderByIdLecturaDesc(
+                    idInvernadero,
+                    "Humedad"
+            );
+
+    lectura.ifPresent(l ->
+            dto.setHumedad(l.getValor())
+    );
+}
+
+private void cargarLuminosidad(
+        SimulationRealtimeDTO dto,
+        Integer idInvernadero
+) {
+
+    Optional<LecturaSensor> lectura =
+            lecturaRepository
+            .findTopByInvernaderoSensor_Invernadero_IdInvernaderoAndInvernaderoSensor_Sensor_NombreContainingIgnoreCaseOrderByIdLecturaDesc(
+                    idInvernadero,
+                    "Luz"
+            );
+
+    lectura.ifPresent(l ->
+            dto.setLuminosidad(l.getValor())
+    );
+}
+
+private void cargarCO2(
+        SimulationRealtimeDTO dto,
+        Integer idInvernadero
+) {
+
+    Optional<LecturaSensor> lectura =
+            lecturaRepository
+            .findTopByInvernaderoSensor_Invernadero_IdInvernaderoAndInvernaderoSensor_Sensor_NombreContainingIgnoreCaseOrderByIdLecturaDesc(
+                    idInvernadero,
+                    "CO2"
+            );
+
+    lectura.ifPresent(l ->
+            dto.setCo2(l.getValor())
+    );
+}
 
     private void cargarTemperatura(
             SimulationRealtimeDTO dto
@@ -161,15 +227,14 @@ public class DashboardRealtimeService {
                         activo
                 );
 
-            } else if (
-                    nombre.contains(
-                            "bomba"
-                    )
-            ) {
+            }  else if (
+        nombre.contains("bomba")
+        || nombre.contains("riego")
+) {
 
-                dto.setBomba(
-                        activo
-                );
+    dto.setBomba(
+            activo
+    );
 
             } else if (
                     nombre.contains(
@@ -213,7 +278,7 @@ public class DashboardRealtimeService {
                 plantacionRepository
                 .findByInvernadero_IdInvernaderoAndEstado(
                         idInvernadero,
-                        "ACTIVO"
+                        "ACTIVA"
                 )
                 .orElse(null);
 
